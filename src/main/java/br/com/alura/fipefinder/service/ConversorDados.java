@@ -3,15 +3,11 @@ package br.com.alura.fipefinder.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
-import com.google.gson.Gson;
 
-import java.lang.reflect.Array;
-import java.util.Collections;
 import java.util.List;
 
 public class ConversorDados implements IConverteDados{
     private final ObjectMapper mapper = new ObjectMapper();
-    private static final Gson gson =new Gson();
 
     @Override
     public <T> T obterDados(String json, Class<T> type) {
@@ -32,10 +28,4 @@ public class ConversorDados implements IConverteDados{
             throw new RuntimeException("Erro ao converter json na classe " + e.getMessage());
         }
     }
-
-    public static <T> List<T> obterListaGson(String json, Class<T> type) {
-        T[] array = gson.fromJson(json, (Class<T[]>) Array.newInstance(type, 0).getClass());
-        return List.of(array);
-    }
-
 }

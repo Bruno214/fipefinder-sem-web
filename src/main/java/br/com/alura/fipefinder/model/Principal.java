@@ -3,8 +3,10 @@ package br.com.alura.fipefinder.model;
 import br.com.alura.fipefinder.service.ConsumoAPI;
 import br.com.alura.fipefinder.service.ConversorDados;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 public class Principal {
     private final Scanner leitura = new Scanner(System.in);
@@ -12,6 +14,7 @@ public class Principal {
     private final ConsumoAPI consumoAPI = new ConsumoAPI();
     private final ConversorDados conversorDados = new ConversorDados();
     private final String enderecoBase;
+    private List<Marca> veiculos = new ArrayList<>();
 
     public Principal() {
         this.tipoVeiculoEscolhido = null;
@@ -29,10 +32,50 @@ public class Principal {
 
         consultarMarcaVeiculo();
 
-        System.out.print("Informe o código da marca para consulta: ");
+        System.out.print("\nInforme o código da marca para consulta: ");
         var codigoMarca = leitura.nextLine();
 
         consultarModelosVeiculos(codigoMarca);
+
+        System.out.print("\nInforme o nome do carro para buscar: ");
+        var carroBuscado = leitura.nextLine();
+
+        consultarCarrosPeloNome(carroBuscado);
+
+        System.out.print("\nDigite o código do modelo para consultar valores: ");
+        var codigoVeiculo = leitura.nextLine();
+
+        consultarValoresVeiculo(codigoMarca, codigoVeiculo);
+
+    }
+
+    public void consultarValoresVeiculo(String codigoMarca, String codigoVeiculo) {
+        List<DadosVeiculo> veiculos = new ArrayList<>();
+
+        String json = consumoAPI.obterDados(this.enderecoBase +
+                this.tipoVeiculoEscolhido.getDescricao()+"/marcas/" +
+                codigoMarca + "/modelos/" + codigoVeiculo+"/anos/");
+
+        List<Marca> marcas = conversorDados.obterLista(json, Marca.class);
+
+
+        for (Marca marca : marcas) {
+            json = consumoAPI.obterDados(this.enderecoBase +
+                    this.tipoVeiculoEscolhido.getDescricao()+"/marcas/" +
+                    codigoMarca + "/modelos/" + codigoVeiculo+"/anos/" + marca.codigo());
+            veiculos.add(conversorDados.obterDados(json, DadosVeiculo.class));
+        }
+        System.out.println("\nTodos os veiculos filtrados com avaliações por ano: ");
+        imprimirLista(veiculos);
+    }
+
+    public void consultarCarrosPeloNome(String carroBuscado) {
+        var lista = this.veiculos.stream()
+                .filter(v -> v.nome().toLowerCase().contains(carroBuscado))
+                .collect(Collectors.toList());
+
+        imprimirLista(lista);
+
     }
 
     public void consultarMarcaVeiculo() {
@@ -56,11 +99,13 @@ public class Principal {
                 this.tipoVeiculoEscolhido.getDescricao()+"/marcas/" + codigoMarca+"/modelos");
 
         Modelos modelos = conversorDados.obterDados(json, Modelos.class);
+        this.veiculos = modelos.veiculos();
 
         imprimirLista(modelos.veiculos());
     }
 
     private <T> void imprimirLista(List<T> lista) {
+        System.out.println("\n");
         lista.forEach(System.out::println);
     }
 
